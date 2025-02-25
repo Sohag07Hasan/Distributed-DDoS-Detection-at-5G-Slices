@@ -36,7 +36,9 @@ from config import (
     LR_ADJUSTMENT_PATIENCE_ON_EPOCH,
     EARLY_STOP_PATIENCE_ON_EPOCH,
     EARLY_STOP_PATIENCE_ON_ROUND,
-    ROUND_ON_ROUND_ACCURACY_THRESHOLD
+    ROUND_ON_ROUND_ACCURACY_THRESHOLD,
+    #Penalty Term to calcuate from False Positive Rate
+    ALPHA
 )
 from dataloader import get_centralized_testset  # Centralized testset loader
 
@@ -79,6 +81,7 @@ def create_strategy():
         mfc = MIN_FIT_CLIENTS, # min_fit_clients
         mec = MIN_EVAL_CLIENTS, #min_evaluate_clients
         mac = NUM_CLIENTS, #min_available_clients
+        alpha = ALPHA, #penalty term to use with fcr
     )
 
     return strategy

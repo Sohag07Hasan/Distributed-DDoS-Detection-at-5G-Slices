@@ -50,6 +50,7 @@ class FlowerClient(fl.client.NumPyClient):
         # read from config
         lr, epochs, server_round = config["lr"], config["epochs"], config["server_round"]
         lr_adjustment_patience_on_epoch, lr_adjustment_factor, min_lr, early_stop_patience_on_epoch = config['lr_adjustment_patience_on_epoch'], config['lr_adjustment_factor'], config['min_lr'], config['early_stop_patience_on_epoch']
+        alpha = config['alpha']
 
 
         # Define the optimizer
@@ -58,7 +59,7 @@ class FlowerClient(fl.client.NumPyClient):
         # do local training
         #train(self.model, self.trainloader, optim, epochs=epochs, device=self.device)
         #def train_with_early_stopping(client_id, net, trainloader, testloader, optimizer, epochs, device: str, patience=3, min_lr=0.001, max_lr=0.01):
-        results = train_with_early_stopping(self.model, self.trainloader, self.valloader, optim, epochs=epochs, device=self.device, lr_patience=lr_adjustment_patience_on_epoch, early_stop_patience=early_stop_patience_on_epoch, factor=lr_adjustment_factor, min_lr=min_lr)
+        results = train_with_early_stopping(self.model, self.trainloader, self.valloader, optim, epochs=epochs, device=self.device, lr_patience=lr_adjustment_patience_on_epoch, early_stop_patience=early_stop_patience_on_epoch, factor=lr_adjustment_factor, min_lr=min_lr, alpha=alpha)
         parameters = list(results['model_state'].values())
         self.set_parameters(parameters) ## setting up the best model
 

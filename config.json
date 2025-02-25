@@ -1,15 +1,15 @@
 {
   "dataset_path": {
     "FOLD": 5,
-    "TRAIN_DATASET_PATH_PCA": "./feature_engineering/dataset/client_{0}/fold_{1}/pca/client_{0}_pca_train_dataset.csv",
-    "TEST_DATASET_PATH_PCA": "./feature_engineering/dataset/client_{0}/fold_{1}/pca/client_{0}_pca_test_dataset.csv",
-    "TRAIN_DATASET_PATH_ORIGINAL": "./feature_engineering/dataset/client_{0}/fold_{1}/client_{0}_scaled_train_dataset.csv",
-    "TEST_DATASET_PATH_ORIGINAL": "./feature_engineering/dataset/client_{0}/fold_{1}/client_{0}_sclaed_test_dataset.csv"
+    "TRAIN_DATASET_PATH_PCA": "../IDS/feature_engineering/dataset_IID/client_{0}/fold_{1}/pca/client_{0}_pca_train_dataset.csv",
+    "TEST_DATASET_PATH_PCA": "../IDS/feature_engineering/dataset_IID/client_{0}/fold_{1}/pca/client_{0}_pca_test_dataset.csv",
+    "TRAIN_DATASET_PATH_ORIGINAL": "../IDS/feature_engineering/dataset_IID/client_{0}/fold_{1}/client_{0}_scaled_train_dataset.csv",
+    "TEST_DATASET_PATH_ORIGINAL": "../IDS/feature_engineering/dataset_IID/client_{0}/fold_{1}/client_{0}_sclaed_test_dataset.csv"
   },
   "features": {
-    "NUM_FEATURES": 9,
+    "NUM_FEATURES": 20,
     "FEATURE_TYPE": "original",
-    "ALL_FEATURES": "./final_features_FL.csv",
+    "ALL_FEATURES": "./final_features_experiment_1.csv",
     "LABEL_FEATURE": "Label"
   },
   "training": {
@@ -47,7 +47,10 @@
     "MIN_FIT_CLIENTS": 4,
     "MIN_EVAL_CLIENTS": 4
   },
+  "fcr": {
+    "ALPHA": 0.1
+  },
   "server": {
-    "SERVER_ADDRESS": "0.0.0.0:3084"
+    "SERVER_ADDRESS": "0.0.0.0:3095"
   }
 }

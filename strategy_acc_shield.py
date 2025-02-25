@@ -51,7 +51,8 @@ class FLAccShield(FedAvg):
         fe=1,
         mfc=2,
         mec=2,
-        mac=4
+        mac=4,
+        alpha=0.1
     ):
         super().__init__(fraction_fit=ff, fraction_evaluate=fe, min_fit_clients=mfc, min_evaluate_clients=mec, min_available_clients=mac, fit_metrics_aggregation_fn=weighted_average_fit, evaluate_metrics_aggregation_fn=weighted_average_eval, evaluate_fn=evaluate_fn)  # Initialize FedAvg with additional parameters
         
@@ -87,6 +88,9 @@ class FLAccShield(FedAvg):
         self.best_accuracies = {}  # Track best accuracy per client
         self.no_improvement_rounds = {}  # Track consecutive no-improvement rounds per client
 
+        ##FCR
+        self.alpha = alpha
+
 
     #Begining of a round 
     #Setup fit  parameters (like Learning Rate, Epoch etc.)
@@ -119,7 +123,8 @@ class FLAccShield(FedAvg):
                 "lr_adjustment_patience_on_epoch": self.lr_adjustment_patience_on_epoch,
                 "lr_adjustment_factor": self.lr_adjustment_factor,
                 "early_stop_patience_on_epoch": self.early_stop_patience_on_epoch,
-                "min_lr": self.min_lr
+                "min_lr": self.min_lr,
+                "alpha": self.alpha
 
             }
             

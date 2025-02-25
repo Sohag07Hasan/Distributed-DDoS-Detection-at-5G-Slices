@@ -44,10 +44,13 @@ def train_with_early_stopping(
     early_stop_patience=6,
     factor=0.1,  # Factor by which the LR will be reduced
     min_lr=0.00001,  # Minimum LR after reduction
+    alpha=0.1 #to be used to calcuate penalty
 ):
     """Train the network with ReduceLROnPlateau scheduler, early stopping, and learning rate tracking."""
     criterion = torch.nn.CrossEntropyLoss()
-    net.train()
+    penalty = calculate_penalty(net, testloader, device, alpha)
+
+    net.train() #put the model in trainign mode
 
     # Early stopping variables
     best_val_accuracy = 0
@@ -80,6 +83,7 @@ def train_with_early_stopping(
             optimizer.zero_grad()
             outputs = net(features)
             loss = criterion(outputs, labels)
+            loss += penalty ##adding the penalty
             loss.backward()
             optimizer.step()
 
@@ -134,6 +138,26 @@ def train_with_early_stopping(
         "model_state": best_model_state if best_model_state is not None else net.state_dict(),
         "metrics_history": metrics_history,
     }
+
+
+## calcuate penalty for Fasle Posivite Rate
+## Calcuate Penaly
+def calculate_penalty(net, testloader, device: str, alpha: float):
+    criterion = torch.nn.CrossEntropyLoss()
+    false_positives, false_negatives = 0, 0
+
+    net.eval()    
+    with torch.no_grad():
+        for batch in testloader:
+            features, labels = batch[0].to(device), batch[1].to(device)
+            outputs = net(features)           
+            # Get predictions
+            _, predicted = torch.max(outputs.data, 1)
+            # Calculate false positives and false negatives
+            false_positives += ((predicted == 1) & (labels == 0)).sum().item()
+            false_negatives += ((predicted == 0) & (labels == 1)).sum().item()
+        
+    return alpha * (false_negatives + false_positives) / len(testloader.dataset) #calculation of penalty
 
 
 
@@ -220,7 +244,7 @@ def prepare_file_path(path):
     # Check if the directory exists
     if not os.path.exists(directory):
         # If the directory does not exist, create it
-        os.makedirs(directory)
+        os.makedirs(directory, exist_ok=True)
     return file_path
 
 
