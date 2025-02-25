@@ -9,7 +9,7 @@
   "features": {
     "NUM_FEATURES": 6,
     "FEATURE_TYPE": "original",
-    "ALL_FEATURES": "../IDS/final_features_FL_nonIID.csv",
+    "ALL_FEATURES": "../IDS/final_features_FL_nonIID_v2.csv",
     "LABEL_FEATURE": "Label"
   },
   "training": {
