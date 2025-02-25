@@ -7,9 +7,9 @@
     "TEST_DATASET_PATH_ORIGINAL": "./feature_engineering/dataset_nonIID/client_{0}/fold_{1}/client_{0}_scaled_test_dataset.csv"
   },
   "features": {
-    "NUM_FEATURES": 8,
+    "NUM_FEATURES": 25,
     "FEATURE_TYPE": "original",
-    "ALL_FEATURES": "./final_features_FL_nonIID_v2.csv",
+    "ALL_FEATURES": "./Independence_Scores_nonIID.csv",
     "LABEL_FEATURE": "Label"
   },
   "training": {
@@ -48,6 +48,6 @@
     "MIN_EVAL_CLIENTS": 4
   },
   "server": {
-    "SERVER_ADDRESS": "0.0.0.0:3080"
+    "SERVER_ADDRESS": "0.0.0.0:3097"
   }
 }
