@@ -1,15 +1,15 @@
 {
   "dataset_path": {
-    "FOLD": 2,
+    "FOLD": 5,
     "TRAIN_DATASET_PATH_PCA": "./feature_engineering/dataset_nonIID/client_{0}/fold_{1}/pca/client_{0}_pca_train_dataset.csv",
     "TEST_DATASET_PATH_PCA": "./feature_engineering/dataset_nonIID/client_{0}/fold_{1}/pca/client_{0}_pca_test_dataset.csv",
     "TRAIN_DATASET_PATH_ORIGINAL": "./feature_engineering/dataset_nonIID/client_{0}/fold_{1}/client_{0}_scaled_train_dataset.csv",
     "TEST_DATASET_PATH_ORIGINAL": "./feature_engineering/dataset_nonIID/client_{0}/fold_{1}/client_{0}_scaled_test_dataset.csv"
   },
   "features": {
-    "NUM_FEATURES": 25,
+    "NUM_FEATURES": 20,
     "FEATURE_TYPE": "original",
-    "ALL_FEATURES": "./Independence_Scores_nonIID.csv",
+    "ALL_FEATURES": "./2.2_final_features_FL_nonIID.csv",
     "LABEL_FEATURE": "Label"
   },
   "training": {
@@ -48,6 +48,6 @@
     "MIN_EVAL_CLIENTS": 4
   },
   "server": {
-    "SERVER_ADDRESS": "0.0.0.0:3097"
+    "SERVER_ADDRESS": "0.0.0.0:3095"
   }
 }
