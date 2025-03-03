@@ -251,7 +251,7 @@ class FLAccShield(FedAvg):
         # Do not aggregate if there are failures and failures are not accepted
         if not self.accept_failures and failures:
             return None, {}
-
+        min_delta = 1e-4
         ## Grabbing metrics together
         #accuracies = [eval_res.metrics.get("accuracy", 0.5) for _, eval_res in results]
         losses = [eval_res.metrics.get("loss", 0.0) for _, eval_res in results]
@@ -280,7 +280,7 @@ class FLAccShield(FedAvg):
                 self.best_accuracies[client_id] = loss
                 self.no_improvement_rounds[client_id] = 0
             #elif loss < self.best_accuracies[client_id] * (1 + self.round_on_round_accuracy_threshold):
-            elif loss < self.best_accuracies[client_id]:
+            elif loss + min_delta < self.best_accuracies[client_id]:
                 # Update best accuracy and reset no-improvement counter
                 self.best_accuracies[client_id] = loss
                 self.no_improvement_rounds[client_id] = 0

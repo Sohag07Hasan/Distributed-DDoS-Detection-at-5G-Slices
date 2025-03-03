@@ -169,6 +169,7 @@ def train_autoencoder_with_early_stopping(
     best_val_loss = float("inf")
     epochs_without_improvement = 0
     best_model_state = None  # To save the best model
+    min_delta = 1e-4
 
     # Store metrics for each epoch
     metrics_history = {
@@ -222,7 +223,7 @@ def train_autoencoder_with_early_stopping(
         scheduler.step(epoch_val_loss)
 
         # Early stopping condition
-        if epoch_val_loss < best_val_loss:
+        if epoch_val_loss < best_val_loss - min_delta: #significant improvment
             best_val_loss = epoch_val_loss
             epochs_without_improvement = 0
             best_model_state = net.state_dict()  # Save the best model state
@@ -280,11 +281,18 @@ def clear_cuda_cache():
 
 ## Convert a panda dataframe into a Tensordataset for to be useable by torch
 ## @df = panda dataframe
-def to_tensor(df):
+def to_tensor(df, type="train"):
     """Convert DataFrame to PyTorch TensorDataset (Unsupervised - No Labels)."""
-    X = df.values      
-    X_tensor = torch.tensor(X, dtype=torch.float32)
-    return TensorDataset(X_tensor)
+    if type == "eval":
+        X = df.drop(columns=["Label"]).values  # Drop label column for input features
+        y = df["Label"].values  # Extract labels
+        X_tensor = torch.tensor(X, dtype=torch.float32)
+        y_tensor = torch.tensor(y, dtype=torch.long)  # Ensure correct tensor type for labels
+        return TensorDataset(X_tensor, y_tensor)
+    else:
+        X = df.values      
+        X_tensor = torch.tensor(X, dtype=torch.float32)
+        return TensorDataset(X_tensor)
 
 
 ## Prepare File Path from Features and Folds
@@ -369,17 +377,46 @@ def save_local_train_history_to_csv(client_id, server_round, metrics):
    
 
 ## Save the mode based on parameters
-def save_model(parameters, file_path = GLOBAL_MODEL_PATH, input_size=NUM_FEATURES):
+# def save_model(parameters, file_path = GLOBAL_MODEL_PATH, input_size=NUM_FEATURES):
+#     try:
+#         model = construct_autoencoder(input_size=input_size)
+#         # Determine device
+#         try:
+#         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+#         model.to(device) 
+
+#         # set parameters to the model
+#         params_dict = zip(model.state_dict().keys(), parameters)
+#         state_dict = OrderedDict({k: torch.Tensor(v) for k, v in params_dict})
+#         model.load_state_dict(state_dict, strict=True)
+#         torch.save(model.state_dict(), prepare_file_path(file_path))
+#     except Exception as e:
+#         print(f"Saving model error: {e}")
+
+def save_model(parameters, file_path=GLOBAL_MODEL_PATH, input_size=NUM_FEATURES):
     try:
         model = construct_autoencoder(input_size=input_size)
-        # Determine device
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        model.to(device)  # send model to device
+        
+        # Try using GPU first, fallback to CPU if GPU is unavailable or fails
+        try:
+            device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+            model.to(device)
+            torch.cuda.synchronize()  # Ensure GPU computations are complete
+        except Exception as gpu_error:
+            print(f"GPU error detected: {gpu_error}, switching to CPU...")
+            device = torch.device("cpu")
+            model.to(device)
 
-        # set parameters to the model
+        # Set parameters to the model
         params_dict = zip(model.state_dict().keys(), parameters)
-        state_dict = OrderedDict({k: torch.Tensor(v) for k, v in params_dict})
+        state_dict = OrderedDict({k: torch.tensor(v, dtype=torch.float32, device=device) for k, v in params_dict})
         model.load_state_dict(state_dict, strict=True)
+
+        # Move model to CPU before saving
+        model.cpu()
         torch.save(model.state_dict(), prepare_file_path(file_path))
+        print("Model saved successfully.")
+
     except Exception as e:
         print(f"Saving model error: {e}")
+

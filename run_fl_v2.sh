@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # List of NUM_FEATURES values to iterate over
-NUM_FEATURES_LIST=(41 39 37 35 33 31 29 27 25 23 20)
+NUM_FEATURES_LIST=(27 28 29 30 31 32 33 34 35 36 37 38 39)
 
 # Loop over NUM_FEATURES values
 for NUM_FEATURES in "${NUM_FEATURES_LIST[@]}"; do
@@ -13,6 +13,15 @@ for NUM_FEATURES in "${NUM_FEATURES_LIST[@]}"; do
 
   # Nested loop for folds
   for FOLD in $(seq 1 5); do
+
+  # Define model file path
+    MODEL_FILE="./results/original_${NUM_FEATURES}_fold_${FOLD}/best_global_model.pth"
+    # Check if the model file already exists
+    if [ -f "$MODEL_FILE" ]; then
+      echo "Model for NUM_FEATURES=$NUM_FEATURES, FOLD=$FOLD already exists. Skipping..."
+      continue  # Skip this iteration and move to the next fold
+    fi
+
     echo "Running fold $FOLD with NUM_FEATURES=$NUM_FEATURES..."
 
     # Calculate the port number dynamically (e.g., base port is 8088, increment by 1 for each fold)

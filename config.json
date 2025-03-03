@@ -1,13 +1,13 @@
 {
   "dataset_path": {
     "FOLD": 1,
-    "TRAIN_DATASET_PATH_PCA": "../IDS/feature_engineering/dataset_nonIID/client_{0}/fold_{1}/pca/client_{0}_pca_train_dataset.csv",
-    "TEST_DATASET_PATH_PCA": "../IDS/feature_engineering/dataset_nonIID/client_{0}/fold_{1}/pca/client_{0}_pca_test_dataset.csv",
-    "TRAIN_DATASET_PATH_ORIGINAL": "../IDS/feature_engineering/dataset_nonIID/client_{0}/fold_{1}/client_{0}_scaled_train_dataset.csv",
-    "TEST_DATASET_PATH_ORIGINAL": "../IDS/feature_engineering/dataset_nonIID/client_{0}/fold_{1}/client_{0}_scaled_test_dataset.csv"
+    "TRAIN_DATASET_PATH_PCA": "../IDS/feature_engineering/dataset_IID/client_{0}/fold_{1}/pca/client_{0}_pca_train_dataset.csv",
+    "TEST_DATASET_PATH_PCA": "../IDS/feature_engineering/dataset_IID/client_{0}/fold_{1}/pca/client_{0}_pca_test_dataset.csv",
+    "TRAIN_DATASET_PATH_ORIGINAL": "../IDS/feature_engineering/dataset_IID/client_{0}/fold_{1}/client_{0}_scaled_train_dataset.csv",
+    "TEST_DATASET_PATH_ORIGINAL": "../IDS/feature_engineering/dataset_IID/client_{0}/fold_{1}/client_{0}_sclaed_test_dataset.csv"
   },
   "features": {
-    "NUM_FEATURES": 41,
+    "NUM_FEATURES": 27,
     "FEATURE_TYPE": "original",
     "ALL_FEATURES": "./1.3_final_features_experiment_avg_score.csv",
     "LABEL_FEATURE": "Label"
@@ -27,7 +27,8 @@
   "early_stopping": {
     "EARLY_STOP_PATIENCE_ON_EPOCH": 6,
     "EARLY_STOP_PATIENCE_ON_ROUND": 5,
-    "ROUND_ON_ROUND_ACCURACY_THRESHOLD": 0.01
+    "ROUND_ON_ROUND_ACCURACY_THRESHOLD": 0.01,
+    "ROUND_ON_ROUND_LOSS_THRESHOLD": 0.001
   },
   "results_path": {
     "FOLDER_NAME": "{0}_{1}_fold_{2}",
@@ -48,7 +49,7 @@
     "MIN_EVAL_CLIENTS": 4
   },
   "server": {
-    "SERVER_ADDRESS": "0.0.0.0:3112"
+    "SERVER_ADDRESS": "0.0.0.0:3098"
   },
   "autoencoder": {
     "AUTOENCODER_LAYERS": "./autoencoder_layers.csv",
