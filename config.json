@@ -1,21 +1,21 @@
 {
   "dataset_path": {
-    "FOLD": 5,
-    "TRAIN_DATASET_PATH_PCA": "./feature_engineering/dataset_nonIID/client_{0}/fold_{1}/pca/client_{0}_pca_train_dataset.csv",
-    "TEST_DATASET_PATH_PCA": "./feature_engineering/dataset_nonIID/client_{0}/fold_{1}/pca/client_{0}_pca_test_dataset.csv",
-    "TRAIN_DATASET_PATH_ORIGINAL": "./feature_engineering/dataset_nonIID/client_{0}/fold_{1}/client_{0}_scaled_train_dataset.csv",
-    "TEST_DATASET_PATH_ORIGINAL": "./feature_engineering/dataset_nonIID/client_{0}/fold_{1}/client_{0}_scaled_test_dataset.csv"
+    "FOLD": 1,
+    "TRAIN_DATASET_PATH_PCA": "../IDS/feature_engineering/dataset_nonIID/client_{0}/fold_{1}/pca/client_{0}_pca_train_dataset.csv",
+    "TEST_DATASET_PATH_PCA": "../IDS/feature_engineering/dataset_nonIID/client_{0}/fold_{1}/pca/client_{0}_pca_test_dataset.csv",
+    "TRAIN_DATASET_PATH_ORIGINAL": "../IDS/feature_engineering/dataset_nonIID/client_{0}/fold_{1}/client_{0}_scaled_train_dataset.csv",
+    "TEST_DATASET_PATH_ORIGINAL": "../IDS/feature_engineering/dataset_nonIID/client_{0}/fold_{1}/client_{0}_scaled_test_dataset.csv"
   },
   "features": {
-    "NUM_FEATURES": 20,
+    "NUM_FEATURES": 41,
     "FEATURE_TYPE": "original",
-    "ALL_FEATURES": "./2.2_final_features_FL_nonIID.csv",
+    "ALL_FEATURES": "./1.3_final_features_experiment_avg_score.csv",
     "LABEL_FEATURE": "Label"
   },
   "training": {
     "LEARNING_RATE": 0.0001,
     "EPOCHS": 30,
-    "BATCH_SIZE": 256,
+    "BATCH_SIZE": 512,
     "MOMENTUM": 0.9,
     "NUM_CLASSES": 2
   },
@@ -48,6 +48,11 @@
     "MIN_EVAL_CLIENTS": 4
   },
   "server": {
-    "SERVER_ADDRESS": "0.0.0.0:3095"
+    "SERVER_ADDRESS": "0.0.0.0:3112"
+  },
+  "autoencoder": {
+    "AUTOENCODER_LAYERS": "./autoencoder_layers.csv",
+    "BENIGN_TRAFFIC_LABEL": 0,
+    "ATTACK_TRAFFIC_LABEL": 1
   }
 }

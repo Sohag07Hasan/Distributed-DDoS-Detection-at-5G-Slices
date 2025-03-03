@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # List of NUM_FEATURES values to iterate over
-NUM_FEATURES_LIST=(13 15 16 17 18 19 20)
+NUM_FEATURES_LIST=(41 39 37 35 33 31 29 27 25 23 20)
 
 # Loop over NUM_FEATURES values
 for NUM_FEATURES in "${NUM_FEATURES_LIST[@]}"; do

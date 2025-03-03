@@ -10,6 +10,8 @@ client_id = 1
 if __name__ =="__main__":
     ## Collecting Datasets
     training, validation = get_training_datasets_by_client(client_id=client_id)
+    #print(training.shape)
+    #print(training.columns)
   
     #fl.client.start_numpy_client(
     fl.client.start_client(

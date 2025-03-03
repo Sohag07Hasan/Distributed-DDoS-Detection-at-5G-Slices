@@ -3,11 +3,17 @@ from typing import Dict, List, Tuple, Callable, Optional, Union
 from logging import WARNING
 
 ##configuration
-from config import NUM_ROUNDS, BATCH_SIZE, GLOBAL_MODEL_PATH, NUM_CLASSES, METRIC_PATH, BEST_GLOBAL_MODEL_PATH, LOCAL_TRAIN_HISTORY_PATH
+from config import (
+    NUM_ROUNDS, BATCH_SIZE, GLOBAL_MODEL_PATH, NUM_CLASSES, NUM_FEATURES,
+    METRIC_PATH, BEST_GLOBAL_MODEL_PATH, LOCAL_TRAIN_HISTORY_PATH
+)
 from dataloader import get_centralized_testset
 from torch.utils.data import DataLoader, TensorDataset
 from model import Net
-from utils import to_tensor, test, prepare_file_path, save_metrics_to_csv, save_model,  save_local_train_history_to_csv
+from utils import (
+    to_tensor, test, prepare_file_path, save_metrics_to_csv, save_model,  
+    save_local_train_history_to_csv, test_autoencoder, construct_autoencoder
+)
 import torch
 import numpy as np
 from collections import OrderedDict
@@ -53,7 +59,7 @@ class FLAccShield(FedAvg):
         mec=2,
         mac=4
     ):
-        super().__init__(fraction_fit=ff, fraction_evaluate=fe, min_fit_clients=mfc, min_evaluate_clients=mec, min_available_clients=mac, fit_metrics_aggregation_fn=weighted_average_fit, evaluate_metrics_aggregation_fn=weighted_average_eval, evaluate_fn=evaluate_fn)  # Initialize FedAvg with additional parameters
+        super().__init__(fraction_fit=ff, fraction_evaluate=fe, min_fit_clients=mfc, min_evaluate_clients=mec, min_available_clients=mac, fit_metrics_aggregation_fn=weighted_average_fit, evaluate_metrics_aggregation_fn=weighted_average_eval)  # Initialize FedAvg with additional parameters
         
         self.initial_lr = initial_lr
         self.initial_epochs = initial_epochs
@@ -102,15 +108,6 @@ class FLAccShield(FedAvg):
         clients = client_manager.sample(num_clients=sample_size, min_num_clients=min_num_clients)
         
         for client in clients:
-            # Initialize client-specific configurations if not yet set
-            # if client.cid not in self.fit_configs:
-            #     self.fit_configs[client.cid] = {
-            #         "lr": self.initial_lr,
-            #         "epochs": self.initial_epochs,
-            #     }
-            
-            # # Use the dynamically adjusted values for each client
-            #client_config = self.fit_configs[client.cid]
             client_config = {
                 #"lr": self.fit_configs.get(client.cid, {}).get('lr', self.initial_lr),
                 "lr": self.initial_lr,
@@ -142,7 +139,7 @@ class FLAccShield(FedAvg):
             return None, {}
 
         # Step 1: grabbing all the parameters
-        accuracies = [fit_res.metrics.get("accuracy", 0.5) for _, fit_res in results]
+        #accuracies = [fit_res.metrics.get("accuracy", 0.5) for _, fit_res in results]
         losses = [fit_res.metrics.get("loss", 0.0) for _, fit_res in results]
         num_eval_examples = [fit_res.metrics.get("num_eval_example", 0) for _, fit_res in results] 
         num_examples = [fit_res.num_examples for _, fit_res in results]
@@ -155,29 +152,23 @@ class FLAccShield(FedAvg):
         for id, client_id in enumerate(fed_client_ids):
             self.fit_configs[client_id] = {'lr': best_learning_rates[id]}
 
-        # ## Storing local Training history
-        #self.local_train_history[server_round] = list(zip(actual_client_ids, local_train_history))
-
-        # self.local_train_history.append({
-        #     'server_rounds': server_round,
-        #     'clients': actual_client_ids,
-        #     'history': local_train_history
-        # })
-
         ## Storing client wise fit metrics
-        self.client_fit_metrics['accuracy'][server_round] = list(zip(actual_client_ids, accuracies))
+        #self.client_fit_metrics['accuracy'][server_round] = list(zip(actual_client_ids, accuracies))
         self.client_fit_metrics['loss'][server_round] = list(zip(actual_client_ids, losses))
 
         if not self.client_mapping:
             self.client_mapping = dict(zip(actual_client_ids, fed_client_ids)) #Saving the mapping for future use
 
         # Step 2: adding contribution of accuracy to the eval_num_examples
-        inverse_accuracies = [1 / value for value in accuracies] #Inversing to give priority to the low performing clients
+        #inverse_accuracies = [1 / value for value in accuracies] #Inversing to give priority to the low performing clients
+        
+        #There is no accuracy so We are weighting the losses
+        inverse_accuracies = losses
         weighted_num_eval_examples = np.multiply(inverse_accuracies, num_eval_examples).tolist()
         sum_weighted_num_eval_examples = sum(weighted_num_eval_examples)
         
         ## adding eval_num_examples to the training_num_example
-        weighted_num_examples = np.multiply(num_examples, sum_weighted_num_eval_examples) / sum_weighted_num_eval_examples
+        weighted_num_examples = np.multiply(num_examples, weighted_num_eval_examples) / sum_weighted_num_eval_examples
 
 
        # Step 3: Integrate new weights in weights
@@ -199,7 +190,7 @@ class FLAccShield(FedAvg):
             log(WARNING, "No fit_metrics_aggregation_fn provided")
 
         #Storing Server info
-        self.server_fit_metrics['accuracy'][server_round] = metrics_aggregated['accuracy']
+        #self.server_fit_metrics['accuracy'][server_round] = metrics_aggregated['accuracy']
         self.server_fit_metrics['loss'][server_round] = metrics_aggregated['loss']
 
         # returing aggregated parameters and metrics
@@ -262,10 +253,10 @@ class FLAccShield(FedAvg):
             return None, {}
 
         ## Grabbing metrics together
-        accuracies = [eval_res.metrics.get("accuracy", 0.5) for _, eval_res in results]
+        #accuracies = [eval_res.metrics.get("accuracy", 0.5) for _, eval_res in results]
         losses = [eval_res.metrics.get("loss", 0.0) for _, eval_res in results]
         actual_client_ids = [eval_res.metrics.get("client_id", 0) for _, eval_res in results]
-        self.client_eval_metrics['accuracy'][server_round] = list(zip(actual_client_ids, accuracies))
+        #self.client_eval_metrics['accuracy'][server_round] = list(zip(actual_client_ids, accuracies))
         self.client_eval_metrics['loss'][server_round] = list(zip(actual_client_ids, losses))
 
 
@@ -282,15 +273,16 @@ class FLAccShield(FedAvg):
 
         for client_proxy, evaluate_res in results:
             client_id = evaluate_res.metrics.get("client_id") #original client ID
-            accuracy = evaluate_res.metrics.get("accuracy", 0.5) # Evaluation results
+            loss = accuracy = evaluate_res.metrics.get("loss", 0.5) # Evaluation results
 
             # Initialize client's best accuracy and no-improvement counter if not already tracked
             if client_id not in self.best_accuracies:
-                self.best_accuracies[client_id] = accuracy
+                self.best_accuracies[client_id] = loss
                 self.no_improvement_rounds[client_id] = 0
-            elif accuracy > self.best_accuracies[client_id] + self.round_on_round_accuracy_threshold:
+            #elif loss < self.best_accuracies[client_id] * (1 + self.round_on_round_accuracy_threshold):
+            elif loss < self.best_accuracies[client_id]:
                 # Update best accuracy and reset no-improvement counter
-                self.best_accuracies[client_id] = accuracy
+                self.best_accuracies[client_id] = loss
                 self.no_improvement_rounds[client_id] = 0
             else:
                 # Increment no-improvement counter if no significant improvement
@@ -316,7 +308,7 @@ class FLAccShield(FedAvg):
 
 
         #Storing Server info in evaluation
-        self.server_eval_metrics['accuracy'][server_round] = metrics_aggregated['accuracy']
+        #self.server_eval_metrics['accuracy'][server_round] = metrics_aggregated['accuracy']
         self.server_eval_metrics['loss'][server_round] = metrics_aggregated['loss']
 
         ##if it is last round is it save the metrics
@@ -333,15 +325,11 @@ class FLAccShield(FedAvg):
         save_model(self.global_models.get(self.current_round), file_path=GLOBAL_MODEL_PATH)
 
         ## Save the best model
-        highest_accuracy_round = max(self.server_eval_metrics['accuracy'], key=self.server_eval_metrics['accuracy'].get)
+        lowest_loss_round = highest_accuracy_round = min(self.server_eval_metrics['loss'], key=self.server_eval_metrics['loss'].get)
         save_model(self.global_models.get(highest_accuracy_round), file_path=BEST_GLOBAL_MODEL_PATH)
 
         #Save the metrics
-        save_metrics_to_csv(self.client_fit_metrics, self.client_eval_metrics, self.server_fit_metrics, self.server_eval_metrics, METRIC_PATH)
-
-        #Save local training history
-        #save_local_train_history_to_csv(self.local_train_history, LOCAL_TRAIN_HISTORY_PATH)
-
+        #save_metrics_to_csv(self.client_fit_metrics, self.client_eval_metrics, self.server_fit_metrics, self.server_eval_metrics, METRIC_PATH)
 
 
 ## Aggregate validation Accuracy
@@ -349,26 +337,26 @@ def weighted_average_eval(metrics: List[Tuple[int, Metrics]]) -> Metrics:
     """Aggregation function for (federated) evaluation metrics, i.e. those returned by
     the client's evaluate() method."""
     # Multiply accuracy of each client by number of examples used
-    accuracies = [num_examples * m["accuracy"] for num_examples, m in metrics]
+    #accuracies = [num_examples * m["accuracy"] for num_examples, m in metrics]
     losses = [num_examples * m["loss"] for num_examples, m in metrics]
     examples = [num_examples for num_examples, _ in metrics]
 
     # Aggregate and return custom metric (weighted average)
-    return {"accuracy": sum(accuracies) / sum(examples), "loss": sum(losses) / sum(examples)}
+    return {"loss": sum(losses) / sum(examples)}
 
 
 ## Aggregate Training Accuracy
 def weighted_average_fit(metrics: List[Tuple[int, Metrics]]) -> Metrics:
     """Custom aggregation function for training (fit) metrics."""
     # Calculate weighted accuracy based on number of examples each client used
-    accuracies = [num_examples * m.get("accuracy", 0.0) for num_examples, m in metrics]
+    #accuracies = [num_examples * m.get("accuracy", 0.0) for num_examples, m in metrics]
     losses = [num_examples * m["loss"] for num_examples, m in metrics]
     examples = [num_examples for num_examples, _ in metrics]
 
     # Aggregate and return the custom metric as weighted average
     if sum(examples) == 0:
         return {"accuracy": 0.0}  # Handle division by zero if no examples are used
-    return {"accuracy": sum(accuracies) / sum(examples), "loss": sum(losses) / sum(examples)}
+    return {"loss": sum(losses) / sum(examples)}
 
 
 ## Centralize Evaluation if central Evaluation dataset available
@@ -381,7 +369,7 @@ def evaluate_fn(server_round: int, parameters, config):
     The, the model will be evaluate on the test set (recall this is the
     whole MNIST test set)."""
 
-    model = Net(num_classes=NUM_CLASSES)
+    model = construct_autoencoder(input_size=NUM_FEATURES)
 
     # Determine device
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -402,8 +390,8 @@ def evaluate_fn(server_round: int, parameters, config):
 
     testloader = DataLoader(to_tensor(centralized_testset), batch_size=BATCH_SIZE)
     # call test
-    loss, accuracy = test(model, testloader, device)
-    return loss, {"accuracy": accuracy}
+    loss = test_autoencoder(model, testloader, device)
+    return loss
 
 
 

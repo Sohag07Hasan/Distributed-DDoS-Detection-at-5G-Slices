@@ -2,7 +2,11 @@ import flwr as fl
 from collections import OrderedDict
 from typing import Dict, List, Tuple
 from flwr.common import NDArrays, Scalar
-from utils import train, test, to_tensor, train_with_early_stopping, save_local_train_history_to_csv
+from utils import (
+    train, test, to_tensor, train_with_early_stopping, 
+    save_local_train_history_to_csv, construct_autoencoder,
+    test_autoencoder, train_autoencoder_with_early_stopping
+)
 from model import Net
 import torch
 from torch.utils.data import DataLoader
@@ -18,7 +22,8 @@ class FlowerClient(fl.client.NumPyClient):
 
         self.trainloader = trainloader
         self.valloader = valloader
-        self.model = Net(input_size=NUM_FEATURES, num_classes=NUM_CLASSES)
+        #self.model = Net(input_size=NUM_FEATURES, num_classes=NUM_CLASSES)
+        self.model = construct_autoencoder(input_size=NUM_FEATURES)
         self.client_id = client_id #savign client ID
 
         # Determine device
@@ -53,12 +58,13 @@ class FlowerClient(fl.client.NumPyClient):
 
 
         # Define the optimizer
-        optim = torch.optim.SGD(self.model.parameters(), lr=lr, momentum=0.9)
+        #optim = torch.optim.SGD(self.model.parameters(), lr=lr, momentum=0.9)
+        optimizer = torch.optim.AdamW(self.model.parameters(), lr=lr, weight_decay=1e-3)
 
         # do local training
         #train(self.model, self.trainloader, optim, epochs=epochs, device=self.device)
         #def train_with_early_stopping(client_id, net, trainloader, testloader, optimizer, epochs, device: str, patience=3, min_lr=0.001, max_lr=0.01):
-        results = train_with_early_stopping(self.model, self.trainloader, self.valloader, optim, epochs=epochs, device=self.device, lr_patience=lr_adjustment_patience_on_epoch, early_stop_patience=early_stop_patience_on_epoch, factor=lr_adjustment_factor, min_lr=min_lr)
+        results = train_autoencoder_with_early_stopping(self.model, self.trainloader, self.valloader, optimizer, epochs=epochs, device=self.device, lr_patience=lr_adjustment_patience_on_epoch, early_stop_patience=early_stop_patience_on_epoch, factor=lr_adjustment_factor, min_lr=min_lr)
         parameters = list(results['model_state'].values())
         self.set_parameters(parameters) ## setting up the best model
 
@@ -69,20 +75,20 @@ class FlowerClient(fl.client.NumPyClient):
 
         # planning to return the evaluation metrics with weights to make
         # utilizing best model performances
-        loss, accuracy = test(self.model, self.valloader, device=self.device)
+        loss = test_autoencoder(self.model, self.valloader, device=self.device)
 
         # return the model parameters to the server as well as extra info (number of training examples in this case)
-        return self.get_parameters({}), len(self.trainloader), {"accuracy": accuracy, "loss": float(loss), "num_eval_example": len(self.valloader), "client_id":self.client_id, "best_learning_rate": best_learing_rate} #"local_train_history": results['metrics_history']
+        return self.get_parameters({}), len(self.trainloader), {"loss": float(loss), "num_eval_example": len(self.valloader), "client_id":self.client_id, "best_learning_rate": best_learing_rate} #"local_train_history": results['metrics_history']
 
     def evaluate(self, parameters: NDArrays, config: Dict[str, Scalar]):
         """Evaluate the model sent by the server on this client's
         local validation set. Then return performance metrics."""
 
         self.set_parameters(parameters)
-        loss, accuracy = test(self.model, self.valloader, device=self.device)
+        loss = test_autoencoder(self.model, self.valloader, device=self.device)
 
         # send statistics back to the server      
-        return float(loss), len(self.valloader), {"accuracy": accuracy, "loss": float(loss), "client_id":self.client_id }
+        return float(loss), len(self.valloader), {"loss": float(loss), "client_id":self.client_id }
 
 
 #Creates a lcient
@@ -90,7 +96,9 @@ def create_client(training_set, validation_set, client_id: int) -> fl.client.Cli
 
     # Now we apply the transform to each batch.
     trainloader = DataLoader(to_tensor(training_set), batch_size=BATCH_SIZE, shuffle=True)
-    valloader = DataLoader(to_tensor(validation_set), batch_size=32)
+    valloader = DataLoader(to_tensor(validation_set), batch_size=BATCH_SIZE)
+
+    #print(training_set.size)
     
     # Create and return client
     return FlowerClient(trainloader, valloader, client_id).to_client()

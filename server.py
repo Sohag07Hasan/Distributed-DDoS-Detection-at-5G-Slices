@@ -15,7 +15,7 @@ from server_acc_shield import ServerAccShield  # Custom server class
 from utils import (
     clear_cuda_cache,
     prepare_file_path,
-    get_evaluate_fn,
+    #get_evaluate_fn,
 )  # Avoid repetitive utils imports
 from config import (
     LEARNING_RATE,

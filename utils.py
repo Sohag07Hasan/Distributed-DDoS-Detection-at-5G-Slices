@@ -5,7 +5,7 @@ We'll be training the model in a Federated setting. In order to do that, we need
 * `test()` that will be used to evaluate the performance of the model on held-out data, e.g., a training set.
 '''
 from config import NUM_ROUNDS, GLOBAL_MODEL_PATH, NUM_CLASSES, BATCH_SIZE, FOLDER_NAME, FOLD, NUM_FEATURES, FEATURE_TYPE,  LOCAL_TRAIN_HISTORY_PATH
-from model import Net
+from model import Net, AutoEncoder
 import torch
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from collections import OrderedDict
@@ -13,6 +13,8 @@ from torch.utils.data import DataLoader, TensorDataset
 import os
 import csv
 import timeit
+from config import AUTOENCODER_LAYERS
+import pandas as pd
 
 
 def train(net, trainloader, optim, epochs, device: str):
@@ -30,9 +32,19 @@ def train(net, trainloader, optim, epochs, device: str):
 
 ## This function will train the model with early stopping implemented
 
-import torch
-from torch.optim.lr_scheduler import ReduceLROnPlateau
+def construct_autoencoder(input_size=NUM_FEATURES):
+    df = pd.read_csv(AUTOENCODER_LAYERS)
+    row = df[df["input_size"] == input_size].iloc[0]
 
+    # Extract parameters
+    hidden_sizes = row["hidden_sizes"]  # String, will be converted inside the class
+    latent_size = int(row["latent_size"])
+    # Create AutoEncoder instance dynamically
+    hidden_sizes = list(map(int, hidden_sizes.split(', ')))
+
+    return AutoEncoder(input_size=input_size, hidden_sizes=hidden_sizes, latent_size=int(latent_size))
+
+#this function will ensure early stopping
 def train_with_early_stopping(
     net,
     trainloader,
@@ -136,6 +148,112 @@ def train_with_early_stopping(
     }
 
 
+# Auto encoder training
+def train_autoencoder_with_early_stopping(
+    net,
+    trainloader,
+    testloader,
+    optimizer,
+    epochs,
+    device: str,
+    lr_patience=3,
+    early_stop_patience=6,
+    factor=0.1,  # Factor by which the LR will be reduced
+    min_lr=0.00001,  # Minimum LR after reduction
+):
+    """Train an AutoEncoder with ReduceLROnPlateau scheduler, early stopping, and learning rate tracking."""
+    criterion = torch.nn.MSELoss()  # AutoEncoders use MSE loss
+    net.train()
+
+    # Early stopping variables
+    best_val_loss = float("inf")
+    epochs_without_improvement = 0
+    best_model_state = None  # To save the best model
+
+    # Store metrics for each epoch
+    metrics_history = {
+        "epoch": [],
+        "training_loss": [],
+        "validation_loss": [],
+        "learning_rate": [],  # To track learning rate for each epoch
+        "training_time": [] # Track training time
+    }
+
+    # ReduceLROnPlateau Scheduler (min mode for loss reduction)
+    scheduler = ReduceLROnPlateau(optimizer, mode="min", patience=lr_patience, factor=factor, min_lr=min_lr)
+
+    for epoch in range(epochs):
+        # Start the timer
+        start_time = timeit.default_timer()
+
+        # Training loop
+        net.train()
+        train_loss = 0.0
+        for batch in trainloader:
+            inputs = batch[0].to(device)  # No labels needed
+            optimizer.zero_grad()
+            outputs = net(inputs)  # AutoEncoder outputs reconstruction
+            loss = criterion(outputs, inputs)  # Compare output with input
+            loss.backward()
+            optimizer.step()
+            train_loss += loss.item() * inputs.size(0)
+
+        # End time
+        end_time = timeit.default_timer()
+        elapsed = end_time - start_time
+        metrics_history["training_time"].append(elapsed)
+
+        # Calculate epoch-wise training loss
+        epoch_train_loss = train_loss / len(trainloader.dataset)
+        metrics_history["training_loss"].append(epoch_train_loss)
+
+        # Validation loss using test_autoencoder function
+        epoch_val_loss = test_autoencoder(net, testloader, device)
+        metrics_history["validation_loss"].append(epoch_val_loss)
+
+        # Track current learning rate
+        current_lr = optimizer.param_groups[0]["lr"]
+        metrics_history["learning_rate"].append(current_lr)
+
+        # Assigning current epoch
+        metrics_history['epoch'].append(epoch + 1)
+
+        # Update the scheduler with validation loss
+        scheduler.step(epoch_val_loss)
+
+        # Early stopping condition
+        if epoch_val_loss < best_val_loss:
+            best_val_loss = epoch_val_loss
+            epochs_without_improvement = 0
+            best_model_state = net.state_dict()  # Save the best model state
+        else:
+            epochs_without_improvement += 1
+
+        if epochs_without_improvement >= early_stop_patience:
+            break  # Stop training if no improvement
+
+    # Return the best model state and metrics history
+    return {
+        "model_state": best_model_state if best_model_state is not None else net.state_dict(),
+        "metrics_history": metrics_history,
+    }
+
+#Testing auto encoder
+def test_autoencoder(net, testloader, device: str):
+    """Validate the AutoEncoder on the entire test set."""
+    criterion = torch.nn.MSELoss()
+    total_loss = 0.0
+    net.eval()
+    with torch.no_grad():
+        for batch in testloader:
+            inputs = batch[0].to(device)  # No labels needed
+            outputs = net(inputs)
+            loss = criterion(outputs, inputs)
+            total_loss += loss.item() * inputs.size(0)
+    avg_loss = total_loss / len(testloader.dataset)
+    return avg_loss
+
+
 
 ##Evaluate the function
 def test(net, testloader, device: str):
@@ -152,45 +270,7 @@ def test(net, testloader, device: str):
             correct += (predicted == labels).sum().item()
     accuracy = correct / len(testloader.dataset)
     return loss, accuracy
-
-    
-    ##After each round it will be used
-def get_evaluate_fn(centralized_testset):
-    """This is a function that returns a function. The returned
-    function (i.e. `evaluate_fn`) will be executed by the strategy
-    at the end of each round to evaluate the stat of the global
-    model."""
-
-    def evaluate_fn(server_round: int, parameters, config):
-        """This function is executed by the strategy it will instantiate
-        a model and replace its parameters with those from the global model.
-        The, the model will be evaluate on the test set (recall this is the
-        whole MNIST test set)."""
-
-        model = Net(num_classes=NUM_CLASSES)
-
-        # Determine device
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        model.to(device)  # send model to device
-
-        # set parameters to the model
-        params_dict = zip(model.state_dict().keys(), parameters)
-        state_dict = OrderedDict({k: torch.Tensor(v) for k, v in params_dict})
-        model.load_state_dict(state_dict, strict=True)
-
-        # Save the model after the final round
-        if server_round == NUM_ROUNDS:  #NUM_ROUNDS is defined globally
-            torch.save(model.state_dict(), prepare_file_path(GLOBAL_MODEL_PATH))
-            print(f"Global model saved at round {server_round}")
-
-        # Apply transform to dataset
-        #testset = centralized_testset.with_transform(apply_transforms)
-        testloader = DataLoader(to_tensor(centralized_testset), batch_size=BATCH_SIZE)
-        # call test
-        loss, accuracy = test(model, testloader, device)
-        return loss, {"accuracy": accuracy}
-
-    return evaluate_fn   
+  
 
 ##clear the cache of the Cuda
 def clear_cuda_cache():
@@ -201,15 +281,10 @@ def clear_cuda_cache():
 ## Convert a panda dataframe into a Tensordataset for to be useable by torch
 ## @df = panda dataframe
 def to_tensor(df):
-    # Separate features and labels
-    X = df.drop(columns="Label").values  # Replace "label" with the actual label column name
-    y = df["Label"].values
-    # Convert to PyTorch tensors
-    # Also reshaping it 5 by 6
-    #X_tensor = torch.tensor(X.reshape(-1, 1, 5, 6), dtype=torch.float32)
+    """Convert DataFrame to PyTorch TensorDataset (Unsupervised - No Labels)."""
+    X = df.values      
     X_tensor = torch.tensor(X, dtype=torch.float32)
-    y_tensor = torch.tensor(y, dtype=torch.long)
-    return TensorDataset(X_tensor, y_tensor)
+    return TensorDataset(X_tensor)
 
 
 ## Prepare File Path from Features and Folds
@@ -266,7 +341,7 @@ def save_local_train_history_to_csv(client_id, server_round, metrics):
     file_path = LOCAL_TRAIN_HISTORY_PATH.format("{}", client_id)
 
     # Initialize CSV headers and rows
-    headers = ["Round", "Client", "Epoch", "Learing_Rate", "Train Accuracy", "Train Loss", "Validation Accuracy", "Validation Loss", "Training Time (S)"]
+    headers = ["Round", "Client", "Epoch", "Learing_Rate", "Train Loss", "Validation Loss", "Training Time (S)"]
     rows = []
 
     # Check if the file exists
@@ -281,23 +356,22 @@ def save_local_train_history_to_csv(client_id, server_round, metrics):
             writer.writerow(headers)
 
         for i, epoch in enumerate(metrics['epoch']):
-            training_accuracy = metrics['training_accuracy'][i] if metrics['training_accuracy'][i] > 0 else 0
-            validation_accuracy = metrics['validation_accuracy'][i] if metrics['validation_accuracy'][i] > 0 else 0
+            #training_accuracy = metrics['training_accuracy'][i] if metrics['training_accuracy'][i] > 0 else 0
+            #validation_accuracy = metrics['validation_accuracy'][i] if metrics['validation_accuracy'][i] > 0 else 0
             training_loss = metrics['training_loss'][i] if metrics['training_loss'][i] > 0 else 0
             validation_loss = metrics['validation_loss'][i] if metrics['validation_loss'][i] > 0 else 0
             learning_rate = metrics['learning_rate'][i] if metrics['learning_rate'][i] > 0 else 0
             training_time = metrics['training_time'][i] if metrics['training_time'][i] > 0 else 0
 
             #Writing the row
-            writer.writerow([server_round, client_id, epoch, learning_rate, training_accuracy, training_loss, validation_accuracy, validation_loss, training_time])
-
-    #print(f"Local Training Metric Saved: {prepare_file_path(file_path)}")
+            writer.writerow([server_round, client_id, epoch, learning_rate, training_loss, validation_loss, training_time])
+ 
    
 
 ## Save the mode based on parameters
-def save_model(parameters, file_path = GLOBAL_MODEL_PATH, num_classes=NUM_CLASSES):
+def save_model(parameters, file_path = GLOBAL_MODEL_PATH, input_size=NUM_FEATURES):
     try:
-        model = Net(num_classes=num_classes)
+        model = construct_autoencoder(input_size=input_size)
         # Determine device
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         model.to(device)  # send model to device

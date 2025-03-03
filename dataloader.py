@@ -3,7 +3,7 @@ from config import (
     TRAIN_DATASET_PATH_ORIGINAL, TEST_DATASET_PATH_ORIGINAL, 
     TRAIN_DATASET_PATH_PCA, TEST_DATASET_PATH_PCA, FOLD, NUM_FEATURES, FEATURE_TYPE,
     ALL_FEATURES, LABEL_FEATURE,
-    #PCA_FEATURES, ORIGINAL_FEATURES
+    BENIGN_TRAFFIC_LABEL
     )
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -24,7 +24,17 @@ def get_training_datasets_by_client(client_id, test_size=0.2, fold=FOLD):
     features = get_features(feature_count=NUM_FEATURES, type=FEATURE_TYPE)    
     training_dataset = load_dataset(train_file_path)
     training_dataset = training_dataset[features]
-    train_set, val_set = train_test_split(training_dataset, test_size=test_size, random_state=42, stratify=training_dataset['Label'])
+
+    #Keep only benign samples (Label = 0)
+    training_dataset = training_dataset[training_dataset[LABEL_FEATURE] == BENIGN_TRAFFIC_LABEL]
+    #print(training_dataset.shape)
+
+    # Drop 'Label' column (since AutoEncoders don't need it)
+    training_dataset = training_dataset.drop(columns=[LABEL_FEATURE])
+    #print(training_dataset.shape)
+
+    # Split into training and validation sets
+    train_set, val_set = train_test_split(training_dataset, test_size=test_size, random_state=42)
 
     return train_set, val_set
 
@@ -45,9 +55,19 @@ def get_evaluation_datasets_by_client(client_id, fold=FOLD, feature_count=NUM_FE
         #features = ORIGINAL_FEATURES.copy()
 
     testing_dataset = load_dataset(test_file_path)
-    #print(len(features))
     features = get_features(feature_count=feature_count, type=FEATURE_TYPE)
-    return testing_dataset[features]
+
+    testing_dataset = testing_dataset[features]
+    
+    # Keep only benign samples (Label = 0)
+    #testing_dataset = testing_dataset[testing_dataset[LABEL_FEATURE] == BENIGN_TRAFFIC_LABEL]
+    
+    #dropping teh label column
+    #testing_dataset = testing_dataset.drop(columns=[LABEL_FEATURE])
+
+    #print(f"Evaluation Dataset Size: {testing_dataset.shape}")
+    
+    return testing_dataset
 
 ## combine testset from all the clients
 ## shuffle and reset the index and return a combined datasets
@@ -56,9 +76,5 @@ def get_centralized_testset():
     client_2_testset = get_evaluation_datasets_by_client(2)
     client_3_testset = get_evaluation_datasets_by_client(3)
     client_4_testset = get_evaluation_datasets_by_client(4)
-    # print(client_1_testset.shape)
-    # print(client_2_testset.shape)
-    # print(client_3_testset.shape)
-    # print(client_4_testset.shape)
     centralized_testset = pd.concat([client_1_testset, client_2_testset, client_3_testset, client_4_testset], axis=0)
     return centralized_testset.sample(frac=1).reset_index(drop=True)
