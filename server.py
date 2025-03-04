@@ -35,21 +35,21 @@ def weighted_average(metrics: List[Tuple[int, Metrics]]) -> Metrics:
     """Aggregation function for (federated) evaluation metrics, i.e. those returned by
     the client's evaluate() method."""
     # Multiply accuracy of each client by number of examples used
-    accuracies = [num_examples * m["accuracy"] for num_examples, m in metrics]
+    losses = [num_examples * m["loss"] for num_examples, m in metrics]
     examples = [num_examples for num_examples, _ in metrics]
 
     # Aggregate and return custom metric (weighted average)
-    return {"accuracy": sum(accuracies) / sum(examples)}
+    return {"loss": sum(losses) / sum(examples)}
 
 
 def fit_metrics_aggregation(metrics: List[Tuple[int, Metrics]]) -> Metrics:
     # Example: compute weighted average accuracy
     #print(metrics)
-    accuracies = [num_examples * m["accuracy"] for num_examples, m in metrics]
+    losses = [num_examples * m["loss"] for num_examples, m in metrics]
     examples = [num_examples for num_examples, _ in metrics]
 
     # Aggregate and return custom metric (weighted average)
-    return {"accuracy": sum(accuracies) / sum(examples)}
+    return {"loss": sum(losses) / sum(examples)}
 
 #Store the history
 def save_history(history, path_text=HISTORY_PATH_TXT, path_pkl=HISTORY_PATH_PKL):
@@ -69,30 +69,6 @@ def save_training_time(start_time, end_time):
     with open(prepare_file_path(TRAINING_TIME), 'w') as file:
         file.write(str(training_time))
 
-
-# Early stopping function
-def early_stopping(history: List[Dict], round_num: int) -> bool:
-    global best_accuracy, no_improvement_counter
-    
-    # Get the accuracy from the latest round
-    current_accuracy = history[-1]["accuracy"]
-
-    # Check for improvement
-    if current_accuracy - best_accuracy > improvement_threshold:
-        best_accuracy = current_accuracy
-        no_improvement_counter = 0  # Reset the counter if improvement
-    else:
-        no_improvement_counter += 1  # Increment the counter if no significant improvement
-
-    # Check if we need to stop
-    if no_improvement_counter >= early_stopping_rounds:
-        print(f"Stopping early at round {round_num} due to lack of improvement.")
-        return True  # Stop the training process
-    return False
-
-##function to run server
-def run_flower_server():
-    pass
 
 if __name__ == "__main__":
     

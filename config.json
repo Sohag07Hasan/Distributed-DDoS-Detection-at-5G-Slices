@@ -1,15 +1,15 @@
 {
   "dataset_path": {
-    "FOLD": 3,
-    "TRAIN_DATASET_PATH_PCA": "../IDS/feature_engineering/dataset_nonIID/client_{0}/fold_{1}/pca/client_{0}_pca_train_dataset.csv",
-    "TEST_DATASET_PATH_PCA": "../IDS/feature_engineering/dataset_nonIID/client_{0}/fold_{1}/pca/client_{0}_pca_test_dataset.csv",
-    "TRAIN_DATASET_PATH_ORIGINAL": "../IDS/feature_engineering/dataset_nonIID/client_{0}/fold_{1}/client_{0}_scaled_train_dataset.csv",
-    "TEST_DATASET_PATH_ORIGINAL": "../IDS/feature_engineering/dataset_nonIID/client_{0}/fold_{1}/client_{0}_scaled_test_dataset.csv"
+    "FOLD": 1,
+    "TRAIN_DATASET_PATH_PCA": "../IDS/feature_engineering/dataset_IID/client_{0}/fold_{1}/pca/client_{0}_pca_train_dataset.csv",
+    "TEST_DATASET_PATH_PCA": "../IDS/feature_engineering/dataset_IID/client_{0}/fold_{1}/pca/client_{0}_pca_test_dataset.csv",
+    "TRAIN_DATASET_PATH_ORIGINAL": "../IDS/feature_engineering/dataset_IID/client_{0}/fold_{1}/client_{0}_scaled_train_dataset.csv",
+    "TEST_DATASET_PATH_ORIGINAL": "../IDS/feature_engineering/dataset_IID/client_{0}/fold_{1}/client_{0}_sclaed_test_dataset.csv"
   },
   "features": {
-    "NUM_FEATURES": 20,
+    "NUM_FEATURES": 27,
     "FEATURE_TYPE": "original",
-    "ALL_FEATURES": "../IDS/Independence_Scores_nonIID.csv",
+    "ALL_FEATURES": "./1.3_final_features_experiment_avg_score.csv",
     "LABEL_FEATURE": "Label"
   },
   "training": {
@@ -28,7 +28,7 @@
   },
   "strategy": {
     "NUM_CLIENTS": 4,
-    "NUM_ROUNDS": 5,
+    "NUM_ROUNDS": 20,
     "FRACTION_FIT": 1,
     "FRACTION_EVAL": 1,
     "MIN_FIT_CLIENTS": 4,
@@ -36,10 +36,15 @@
     "PROXIMAL_MU": 0.01
   },
   "server": {
-    "SERVER_ADDRESS": "0.0.0.0:3113"
+    "SERVER_ADDRESS": "0.0.0.0:3098"
   },
   "early_stopping": {
     "EARLY_STOPPING_ROUNDS": 3,
     "IMPROVEMENT_THRESHOLD": 0.001
+  },
+  "autoencoder": {
+    "AUTOENCODER_LAYERS": "./autoencoder_layers.csv",
+    "BENIGN_TRAFFIC_LABEL": 0,
+    "ATTACK_TRAFFIC_LABEL": 1
   }
 }

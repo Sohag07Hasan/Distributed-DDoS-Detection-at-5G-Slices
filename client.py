@@ -2,11 +2,11 @@ import flwr as fl
 from collections import OrderedDict
 from typing import Dict, List, Tuple
 from flwr.common import NDArrays, Scalar
-from utils import train, test, to_tensor
+from utils import train, test, to_tensor, construct_autoencoder
 from model import Net
 import torch
 from torch.utils.data import DataLoader
-from config import SERVER_ADDRESS, NUM_CLASSES, BATCH_SIZE, PROXIMAL_MU
+from config import SERVER_ADDRESS, NUM_CLASSES, BATCH_SIZE, PROXIMAL_MU, NUM_FEATURES
 #from simulation import client_fn_callback
 from flwr_datasets import FederatedDataset
 #from dataloader import get_datasets, apply_transforms
@@ -18,7 +18,7 @@ class FlowerClient(fl.client.NumPyClient):
 
         self.trainloader = trainloader
         self.valloader = valloader
-        self.model = Net(num_classes=NUM_CLASSES)
+        self.model = construct_autoencoder(input_size=NUM_FEATURES)
 
         self.client_id = client_id #savign client ID
 
@@ -57,7 +57,7 @@ class FlowerClient(fl.client.NumPyClient):
         #print(f"[Client {self.client_id}] fit, config: {config}") 
 
         # Define the optimizer
-        optim = torch.optim.SGD(self.model.parameters(), lr=lr, momentum=0.9)
+        optim = torch.optim.AdamW(self.model.parameters(), lr=lr, weight_decay=1e-3)
 
         global_weights = [param.clone().detach() for param in self.model.parameters()]
 
@@ -72,7 +72,7 @@ class FlowerClient(fl.client.NumPyClient):
         local validation set. Then return performance metrics."""
 
         self.set_parameters(parameters)
-        loss, accuracy = test(self.model, self.valloader, device=self.device)
+        loss = test(self.model, self.valloader, device=self.device)
 
         ##Print the values
         #print(f"[Client {self.client_id}] evaluate, config: {config}")
@@ -80,7 +80,7 @@ class FlowerClient(fl.client.NumPyClient):
 
         # send statistics back to the server
       
-        return float(loss), len(self.valloader), {"accuracy": accuracy}
+        return float(loss), len(self.valloader), {"loss": loss}
 
 
 #Creates a lcient

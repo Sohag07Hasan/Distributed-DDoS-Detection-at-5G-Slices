@@ -11,7 +11,7 @@ module load perl
 
 
 # List of NUM_FEATURES values to iterate over
-NUM_FEATURES_LIST=(27)
+NUM_FEATURES_LIST=(27 28 29 30 31 32 33 34 35 36 37 38 39 40 41)
 
 # Loop over NUM_FEATURES values
 for NUM_FEATURES in "${NUM_FEATURES_LIST[@]}"; do
@@ -22,7 +22,7 @@ for NUM_FEATURES in "${NUM_FEATURES_LIST[@]}"; do
   jq --argjson num_features "$NUM_FEATURES" '.features.NUM_FEATURES = $num_features' config.json > temp.json && mv temp.json config.json
 
   # Nested loop for folds
-  for FOLD in $(seq 1 2); do
+  for FOLD in $(seq 1 5); do
     echo "Running fold $FOLD with NUM_FEATURES=$NUM_FEATURES..."
 
     # Calculate the port number dynamically (e.g., base port is 8088, increment by 1 for each fold)
