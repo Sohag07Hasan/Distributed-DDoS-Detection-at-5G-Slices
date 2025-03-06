@@ -9,7 +9,6 @@ from torch.utils.data import DataLoader
 from config import SERVER_ADDRESS, NUM_CLASSES, BATCH_SIZE, PROXIMAL_MU, NUM_FEATURES
 #from simulation import client_fn_callback
 from flwr_datasets import FederatedDataset
-#from dataloader import get_datasets, apply_transforms
 
 
 class FlowerClient(fl.client.NumPyClient):
@@ -73,13 +72,6 @@ class FlowerClient(fl.client.NumPyClient):
 
         self.set_parameters(parameters)
         loss = test(self.model, self.valloader, device=self.device)
-
-        ##Print the values
-        #print(f"[Client {self.client_id}] evaluate, config: {config}")
-        #print(f"[Client {self.client_id}] evaluate, loss:accuract = {loss}: {accuracy}")
-
-        # send statistics back to the server
-      
         return float(loss), len(self.valloader), {"loss": loss}
 
 
@@ -88,7 +80,7 @@ def create_client(training_set, validation_set, client_id: int) -> fl.client.Cli
 
     # Now we apply the transform to each batch.
     trainloader = DataLoader(to_tensor(training_set), batch_size=BATCH_SIZE, shuffle=True)
-    valloader = DataLoader(to_tensor(validation_set), batch_size=32)
+    valloader = DataLoader(to_tensor(validation_set), batch_size=BATCH_SIZE)
     
     # Create and return client
     return FlowerClient(trainloader, valloader, client_id).to_client()
