@@ -1,13 +1,13 @@
 {
   "dataset_path": {
-    "FOLD": 1,
+    "FOLD": 5,
     "TRAIN_DATASET_PATH_PCA": "../IDS/feature_engineering/dataset_IID/client_{0}/fold_{1}/pca/client_{0}_pca_train_dataset.csv",
     "TEST_DATASET_PATH_PCA": "../IDS/feature_engineering/dataset_IID/client_{0}/fold_{1}/pca/client_{0}_pca_test_dataset.csv",
     "TRAIN_DATASET_PATH_ORIGINAL": "../IDS/feature_engineering/dataset_IID/client_{0}/fold_{1}/client_{0}_scaled_train_dataset.csv",
     "TEST_DATASET_PATH_ORIGINAL": "../IDS/feature_engineering/dataset_IID/client_{0}/fold_{1}/client_{0}_sclaed_test_dataset.csv"
   },
   "features": {
-    "NUM_FEATURES": 27,
+    "NUM_FEATURES": 41,
     "FEATURE_TYPE": "original",
     "ALL_FEATURES": "./1.3_final_features_experiment_avg_score.csv",
     "LABEL_FEATURE": "Label"
@@ -15,7 +15,7 @@
   "training": {
     "LEARNING_RATE": 0.0001,
     "EPOCHS": 30,
-    "BATCH_SIZE": 256,
+    "BATCH_SIZE": 512,
     "MOMENTUM": 0.9,
     "NUM_CLASSES": 2
   },
@@ -33,10 +33,11 @@
     "FRACTION_EVAL": 1,
     "MIN_FIT_CLIENTS": 4,
     "MIN_EVAL_CLIENTS": 4,
-    "PROXIMAL_MU": 0.01
+    "Q_PARAM": 1,
+    "QFFL_LR": 0.1
   },
   "server": {
-    "SERVER_ADDRESS": "0.0.0.0:3098"
+    "SERVER_ADDRESS": "0.0.0.0:2116"
   },
   "early_stopping": {
     "EARLY_STOPPING_ROUNDS": 3,

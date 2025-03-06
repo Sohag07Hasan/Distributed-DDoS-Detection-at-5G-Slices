@@ -26,7 +26,7 @@ for NUM_FEATURES in "${NUM_FEATURES_LIST[@]}"; do
     echo "Running fold $FOLD with NUM_FEATURES=$NUM_FEATURES..."
 
     # Calculate the port number dynamically (e.g., base port is 8088, increment by 1 for each fold)
-    PORT=$((3070 + FOLD + NUM_FEATURES))
+    PORT=$((2070 + FOLD + NUM_FEATURES))
 
     # Check if any process is using the desired port and kill it if found
     echo "Checking if port $PORT is in use..."

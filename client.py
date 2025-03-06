@@ -6,7 +6,9 @@ from utils import train, test, to_tensor, construct_autoencoder
 from model import Net
 import torch
 from torch.utils.data import DataLoader
-from config import SERVER_ADDRESS, NUM_CLASSES, BATCH_SIZE, PROXIMAL_MU, NUM_FEATURES
+from config import (
+    SERVER_ADDRESS, NUM_CLASSES, BATCH_SIZE, NUM_FEATURES, Q_PARAM
+)
 #from simulation import client_fn_callback
 from flwr_datasets import FederatedDataset
 #from dataloader import get_datasets, apply_transforms
@@ -22,7 +24,7 @@ class FlowerClient(fl.client.NumPyClient):
 
         self.client_id = client_id #savign client ID
 
-        self.mu = PROXIMAL_MU ## setting proximal         
+        self.q_param = Q_PARAM         
 
         # Determine device
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -62,7 +64,7 @@ class FlowerClient(fl.client.NumPyClient):
         global_weights = [param.clone().detach() for param in self.model.parameters()]
 
         # do local training
-        train(self.model, self.trainloader, optim, epochs=epochs, device=self.device, mu=self.mu, global_weights=global_weights)
+        train(self.model, self.trainloader, optim, epochs=epochs, device=self.device, q = self.q_param)
 
         # return the model parameters to the server as well as extra info (number of training examples in this case)
         return self.get_parameters({}), len(self.trainloader), {}
@@ -73,12 +75,6 @@ class FlowerClient(fl.client.NumPyClient):
 
         self.set_parameters(parameters)
         loss = test(self.model, self.valloader, device=self.device)
-
-        ##Print the values
-        #print(f"[Client {self.client_id}] evaluate, config: {config}")
-        #print(f"[Client {self.client_id}] evaluate, loss:accuract = {loss}: {accuracy}")
-
-        # send statistics back to the server
       
         return float(loss), len(self.valloader), {"loss": loss}
 
@@ -88,7 +84,7 @@ def create_client(training_set, validation_set, client_id: int) -> fl.client.Cli
 
     # Now we apply the transform to each batch.
     trainloader = DataLoader(to_tensor(training_set), batch_size=BATCH_SIZE, shuffle=True)
-    valloader = DataLoader(to_tensor(validation_set), batch_size=32)
+    valloader = DataLoader(to_tensor(validation_set), batch_size=BATCH_SIZE)
     
     # Create and return client
     return FlowerClient(trainloader, valloader, client_id).to_client()
