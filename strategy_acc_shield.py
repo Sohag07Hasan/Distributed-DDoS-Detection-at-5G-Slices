@@ -1,18 +1,18 @@
 from flwr.server.strategy import FedAvg
-from typing import Dict, List, Tuple, Callable, Optional, Union
+from typing import List, Tuple, Optional, Union
 from logging import WARNING
 
 ##configuration
 from config import (
-    NUM_ROUNDS, BATCH_SIZE, GLOBAL_MODEL_PATH, NUM_CLASSES, NUM_FEATURES,
-    METRIC_PATH, BEST_GLOBAL_MODEL_PATH, LOCAL_TRAIN_HISTORY_PATH
+    BATCH_SIZE, GLOBAL_MODEL_PATH, NUM_FEATURES,
+    BEST_GLOBAL_MODEL_PATH,
 )
 from dataloader import get_centralized_testset
-from torch.utils.data import DataLoader, TensorDataset
-from model import Net
+from torch.utils.data import DataLoader
+
 from utils import (
-    to_tensor, test, prepare_file_path, save_metrics_to_csv, save_model,  
-    save_local_train_history_to_csv, test_autoencoder, construct_autoencoder
+    to_tensor, save_model,  
+    test_autoencoder, construct_autoencoder
 )
 import torch
 import numpy as np
@@ -21,12 +21,9 @@ from functools import reduce
 from typing import Callable
 
 from flwr.common import (
-    EvaluateIns,
     EvaluateRes,
     FitIns,
     FitRes,
-    MetricsAggregationFn,
-    NDArrays,
     Parameters,
     Scalar,
     ndarrays_to_parameters,

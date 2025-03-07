@@ -2,8 +2,7 @@ from datasets import load_dataset
 from config import ( 
     TRAIN_DATASET_PATH_ORIGINAL, TEST_DATASET_PATH_ORIGINAL, 
     TRAIN_DATASET_PATH_PCA, TEST_DATASET_PATH_PCA, FOLD, NUM_FEATURES, FEATURE_TYPE,
-    ALL_FEATURES, LABEL_FEATURE,
-    BENIGN_TRAFFIC_LABEL
+    ALL_FEATURES, LABEL_FEATURE, BENIGN_TRAFFIC_LABEL
     )
 import pandas as pd
 from sklearn.model_selection import train_test_split

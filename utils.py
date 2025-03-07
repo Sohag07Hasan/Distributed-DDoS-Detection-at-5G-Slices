@@ -4,12 +4,12 @@ We'll be training the model in a Federated setting. In order to do that, we need
 * `train()` that will train the model given a dataloader.
 * `test()` that will be used to evaluate the performance of the model on held-out data, e.g., a training set.
 '''
-from config import NUM_ROUNDS, GLOBAL_MODEL_PATH, NUM_CLASSES, BATCH_SIZE, FOLDER_NAME, FOLD, NUM_FEATURES, FEATURE_TYPE,  LOCAL_TRAIN_HISTORY_PATH
-from model import Net, AutoEncoder
+from config import GLOBAL_MODEL_PATH, FOLDER_NAME, FOLD, NUM_FEATURES, FEATURE_TYPE,  LOCAL_TRAIN_HISTORY_PATH
+from model import AutoEncoder
 import torch
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from collections import OrderedDict
-from torch.utils.data import DataLoader, TensorDataset
+from torch.utils.data import TensorDataset
 import os
 import csv
 import timeit
@@ -17,24 +17,13 @@ from config import AUTOENCODER_LAYERS
 import pandas as pd
 
 
-def train(net, trainloader, optim, epochs, device: str):
-    """Train the network on the training set."""
-    criterion = torch.nn.CrossEntropyLoss()
-    net.train()
-    for _ in range(epochs):
-        for batch in trainloader:
-            features, labels = batch[0].to(device), batch[1].to(device)
-            optim.zero_grad()
-            loss = criterion(net(features), labels)
-            loss.backward()
-            optim.step()
-
-
 ## This function will train the model with early stopping implemented
-
 def construct_autoencoder(input_size=NUM_FEATURES):
     df = pd.read_csv(AUTOENCODER_LAYERS)
     row = df[df["input_size"] == input_size].iloc[0]
+
+    if row.empty:
+        raise ValueError(f"Error: input_size {input_size} not found in AUTOENCODER_LAYERS.csv")
 
     # Extract parameters
     hidden_sizes = row["hidden_sizes"]  # String, will be converted inside the class
@@ -43,109 +32,6 @@ def construct_autoencoder(input_size=NUM_FEATURES):
     hidden_sizes = list(map(int, hidden_sizes.split(', ')))
 
     return AutoEncoder(input_size=input_size, hidden_sizes=hidden_sizes, latent_size=int(latent_size))
-
-#this function will ensure early stopping
-def train_with_early_stopping(
-    net,
-    trainloader,
-    testloader,
-    optimizer,
-    epochs,
-    device: str,
-    lr_patience=3,
-    early_stop_patience=6,
-    factor=0.1,  # Factor by which the LR will be reduced
-    min_lr=0.00001,  # Minimum LR after reduction
-):
-    """Train the network with ReduceLROnPlateau scheduler, early stopping, and learning rate tracking."""
-    criterion = torch.nn.CrossEntropyLoss()
-    net.train()
-
-    # Early stopping variables
-    best_val_accuracy = 0
-    epochs_without_improvement = 0
-    best_model_state = None  # To save the best model
-
-    # Store metrics for each epoch
-    metrics_history = {
-        "epoch": [],
-        "training_loss": [],
-        "training_accuracy": [],
-        "validation_loss": [],
-        "validation_accuracy": [],
-        "learning_rate": [],  # To track learning rate for each epoch
-        "training_time": [] #track the trainign time
-    }
-
-    # ReduceLROnPlateau Scheduler
-    scheduler = ReduceLROnPlateau(optimizer, mode="max", patience=lr_patience, factor=factor, min_lr=min_lr)
-
-    for epoch in range(epochs):
-        #start the timer
-        start_time = timeit.default_timer()
-
-        # Training loop
-        net.train()
-        correct_train, total_train, train_loss = 0, 0, 0.0
-        for iteration, batch in enumerate(trainloader):
-            features, labels = batch[0].to(device), batch[1].to(device)
-            optimizer.zero_grad()
-            outputs = net(features)
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
-
-            # Calculate training metrics
-            train_loss += loss.item() * labels.size(0)
-            _, predicted = torch.max(outputs, 1)
-            total_train += labels.size(0)
-            correct_train += (predicted == labels).sum().item()
-
-        #end time
-        end_time = timeit.default_timer()
-        elapsed = end_time - start_time
-        metrics_history["training_time"].append( elapsed) #tracking the time
-
-        # Calculate epoch-wise training loss and accuracy
-        epoch_train_loss = train_loss / total_train
-        epoch_train_accuracy = correct_train / total_train
-        metrics_history["training_loss"].append(epoch_train_loss)
-        metrics_history["training_accuracy"].append(epoch_train_accuracy)
-
-        # Validation loop
-        val_loss, val_accuracy = test(net, testloader, device)
-        metrics_history["validation_loss"].append(val_loss)
-        metrics_history["validation_accuracy"].append(val_accuracy)
-
-        # Track current learning rate
-        current_lr = optimizer.param_groups[0]["lr"]
-        metrics_history["learning_rate"].append(current_lr)
-
-        #assigning current epoch
-        metrics_history['epoch'].append(epoch + 1)
-
-        #print(f"Epoch {epoch + 1}/{epochs}, Training Loss: {epoch_train_loss:.4f}, Training Accuracy: {epoch_train_accuracy:.4f}, Validation Loss: {val_loss:.4f}, Validation Accuracy: {val_accuracy:.4f}, Learning Rate: {current_lr:.6f}")
-
-        # Update the scheduler with the validation accuracy
-        scheduler.step(val_accuracy)
-
-        # Early stopping condition
-        if val_accuracy > best_val_accuracy:
-            best_val_accuracy = val_accuracy
-            epochs_without_improvement = 0
-            best_model_state = net.state_dict()  # Save the best model state
-        else:
-            epochs_without_improvement += 1
-
-        if epochs_without_improvement >= early_stop_patience: #early stop patience should be 2xpatience
-            #print(f"Early Stopping Triggered at Epoch {epoch + 1}.")
-            break
-
-    # Return the best model state and metrics history
-    return {
-        "model_state": best_model_state if best_model_state is not None else net.state_dict(),
-        "metrics_history": metrics_history,
-    }
 
 
 # Auto encoder training
@@ -284,8 +170,13 @@ def clear_cuda_cache():
 def to_tensor(df, type="train"):
     """Convert DataFrame to PyTorch TensorDataset (Unsupervised - No Labels)."""
     if type == "eval":
+
+        if "Label" not in df.columns:
+            raise ValueError("Error: 'Label' column not found in evaluation dataset.")
+        
         X = df.drop(columns=["Label"]).values  # Drop label column for input features
         y = df["Label"].values  # Extract labels
+        
         X_tensor = torch.tensor(X, dtype=torch.float32)
         y_tensor = torch.tensor(y, dtype=torch.long)  # Ensure correct tensor type for labels
         return TensorDataset(X_tensor, y_tensor)
@@ -376,23 +267,7 @@ def save_local_train_history_to_csv(client_id, server_round, metrics):
  
    
 
-## Save the mode based on parameters
-# def save_model(parameters, file_path = GLOBAL_MODEL_PATH, input_size=NUM_FEATURES):
-#     try:
-#         model = construct_autoencoder(input_size=input_size)
-#         # Determine device
-#         try:
-#         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-#         model.to(device) 
-
-#         # set parameters to the model
-#         params_dict = zip(model.state_dict().keys(), parameters)
-#         state_dict = OrderedDict({k: torch.Tensor(v) for k, v in params_dict})
-#         model.load_state_dict(state_dict, strict=True)
-#         torch.save(model.state_dict(), prepare_file_path(file_path))
-#     except Exception as e:
-#         print(f"Saving model error: {e}")
-
+## Save model no each round and each fold
 def save_model(parameters, file_path=GLOBAL_MODEL_PATH, input_size=NUM_FEATURES):
     try:
         model = construct_autoencoder(input_size=input_size)

@@ -1,19 +1,14 @@
 import flwr as fl
 from collections import OrderedDict
-from typing import Dict, List, Tuple
+from typing import Dict
 from flwr.common import NDArrays, Scalar
 from utils import (
-    train, test, to_tensor, train_with_early_stopping, 
-    save_local_train_history_to_csv, construct_autoencoder,
+    to_tensor, save_local_train_history_to_csv, construct_autoencoder,
     test_autoencoder, train_autoencoder_with_early_stopping
 )
-from model import Net
 import torch
 from torch.utils.data import DataLoader
-from config import SERVER_ADDRESS, NUM_CLASSES, BATCH_SIZE, NUM_FEATURES
-#from simulation import client_fn_callback
-from flwr_datasets import FederatedDataset
-#from dataloader import get_datasets, apply_transforms
+from config import BATCH_SIZE, NUM_FEATURES
 
 
 class FlowerClient(fl.client.NumPyClient):

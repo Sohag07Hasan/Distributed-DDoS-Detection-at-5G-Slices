@@ -1,6 +1,5 @@
-from flwr.server.server import Server, evaluate_clients, EvaluateResultsAndFailures
+from flwr.server.server import Server
 from flwr.server.history import History
-from flwr.common.typing import Scalar
 from typing import Optional, Tuple, Dict
 from flwr.common.logger import log
 from logging import INFO, WARNING

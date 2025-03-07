@@ -1,15 +1,15 @@
 {
   "dataset_path": {
-    "FOLD": 1,
-    "TRAIN_DATASET_PATH_PCA": "../IDS/feature_engineering/dataset_IID/client_{0}/fold_{1}/pca/client_{0}_pca_train_dataset.csv",
-    "TEST_DATASET_PATH_PCA": "../IDS/feature_engineering/dataset_IID/client_{0}/fold_{1}/pca/client_{0}_pca_test_dataset.csv",
-    "TRAIN_DATASET_PATH_ORIGINAL": "../IDS/feature_engineering/dataset_IID/client_{0}/fold_{1}/client_{0}_scaled_train_dataset.csv",
-    "TEST_DATASET_PATH_ORIGINAL": "../IDS/feature_engineering/dataset_IID/client_{0}/fold_{1}/client_{0}_sclaed_test_dataset.csv"
+    "FOLD": 2,
+    "TRAIN_DATASET_PATH_PCA": "../IDS/feature_engineering/dataset_nonIID/client_{0}/fold_{1}/pca/client_{0}_pca_train_dataset.csv",
+    "TEST_DATASET_PATH_PCA": "../IDS/feature_engineering/dataset_nonIID/client_{0}/fold_{1}/pca/client_{0}_pca_test_dataset.csv",
+    "TRAIN_DATASET_PATH_ORIGINAL": "../IDS/feature_engineering/dataset_nonIID/client_{0}/fold_{1}/client_{0}_scaled_train_dataset.csv",
+    "TEST_DATASET_PATH_ORIGINAL": "../IDS/feature_engineering/dataset_nonIID/client_{0}/fold_{1}/client_{0}_scaled_test_dataset.csv"
   },
   "features": {
-    "NUM_FEATURES": 27,
+    "NUM_FEATURES": 29,
     "FEATURE_TYPE": "original",
-    "ALL_FEATURES": "./1.3_final_features_experiment_avg_score.csv",
+    "ALL_FEATURES": "./2.1_Independence_Scores_nonIID.csv",
     "LABEL_FEATURE": "Label"
   },
   "training": {
@@ -49,7 +49,7 @@
     "MIN_EVAL_CLIENTS": 4
   },
   "server": {
-    "SERVER_ADDRESS": "0.0.0.0:3098"
+    "SERVER_ADDRESS": "0.0.0.0:3101"
   },
   "autoencoder": {
     "AUTOENCODER_LAYERS": "./autoencoder_layers.csv",
