@@ -1,13 +1,13 @@
 {
   "dataset_path": {
-    "FOLD": 2,
+    "FOLD": 5,
     "TRAIN_DATASET_PATH_PCA": "../IDS/feature_engineering/dataset_nonIID/client_{0}/fold_{1}/pca/client_{0}_pca_train_dataset.csv",
     "TEST_DATASET_PATH_PCA": "../IDS/feature_engineering/dataset_nonIID/client_{0}/fold_{1}/pca/client_{0}_pca_test_dataset.csv",
     "TRAIN_DATASET_PATH_ORIGINAL": "../IDS/feature_engineering/dataset_nonIID/client_{0}/fold_{1}/client_{0}_scaled_train_dataset.csv",
     "TEST_DATASET_PATH_ORIGINAL": "../IDS/feature_engineering/dataset_nonIID/client_{0}/fold_{1}/client_{0}_scaled_test_dataset.csv"
   },
   "features": {
-    "NUM_FEATURES": 29,
+    "NUM_FEATURES": 41,
     "FEATURE_TYPE": "original",
     "ALL_FEATURES": "./2.1_Independence_Scores_nonIID.csv",
     "LABEL_FEATURE": "Label"
@@ -20,7 +20,7 @@
     "NUM_CLASSES": 2
   },
   "learning_rate_schedular": {
-    "MIN_LR": 1e-06,
+    "MIN_LR": 0.000001,
     "LR_ADJUSTMENT_FACTOR": 0.1,
     "LR_ADJUSTMENT_PATIENCE_ON_EPOCH": 3
   },
@@ -49,7 +49,7 @@
     "MIN_EVAL_CLIENTS": 4
   },
   "server": {
-    "SERVER_ADDRESS": "0.0.0.0:3101"
+    "SERVER_ADDRESS": "0.0.0.0:3116"
   },
   "autoencoder": {
     "AUTOENCODER_LAYERS": "./autoencoder_layers.csv",
