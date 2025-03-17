@@ -28,7 +28,7 @@ def load_model(input_size, model_path=GLOBAL_MODEL_PATH):
     return model
 
 result_sources = {
-    'components': range(27, 42),
+    'components': [39, 40],
     'folds': [1, 2, 3, 4, 5],
     'marker': ['o', '-', '^' 'x', '-o-'],
     'clients': [1, 2, 3, 4],

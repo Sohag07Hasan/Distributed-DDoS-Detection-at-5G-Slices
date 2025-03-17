@@ -7,7 +7,7 @@
     "TEST_DATASET_PATH_ORIGINAL": "../IDS/feature_engineering/dataset_nonIID/client_{0}/fold_{1}/client_{0}_scaled_test_dataset.csv"
   },
   "features": {
-    "NUM_FEATURES": 41,
+    "NUM_FEATURES": 40,
     "FEATURE_TYPE": "original",
     "ALL_FEATURES": "./2.1_Independence_Scores_nonIID.csv",
     "LABEL_FEATURE": "Label"
@@ -49,7 +49,7 @@
     "MIN_EVAL_CLIENTS": 4
   },
   "server": {
-    "SERVER_ADDRESS": "0.0.0.0:3116"
+    "SERVER_ADDRESS": "0.0.0.0:3115"
   },
   "autoencoder": {
     "AUTOENCODER_LAYERS": "./autoencoder_layers.csv",

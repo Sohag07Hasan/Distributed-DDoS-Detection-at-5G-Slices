@@ -11,7 +11,7 @@ module load perl
 
 
 # List of NUM_FEATURES values to iterate over
-NUM_FEATURES_LIST=(29 32 35 38 41)
+NUM_FEATURES_LIST=(41 38 35 32 29 26 23 20)
 
 # Loop over NUM_FEATURES values
 for NUM_FEATURES in "${NUM_FEATURES_LIST[@]}"; do
