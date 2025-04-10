@@ -9,13 +9,6 @@ from config import (
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-#import os
-#from datasets import Dataset
-#from flwr_datasets import FederatedDataset
-#from datasets.utils.logging import disable_progress_bar
-#from torchvision.transforms import Compose, ToTensor, Normalize
-#from config import NUM_CLIENTS
-
 
 def load_dataset(file_path):
     df = pd.read_csv(file_path)
