@@ -5,12 +5,12 @@ from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, accuracy_s
 from dataloader import get_evaluation_datasets_by_client  # Assuming this function gets local client datasets
 from model import Net
 from collections import OrderedDict
-from config import NUM_CLASSES, NUM_CLIENTS, GLOBAL_MODEL_PATH, BATCH_SIZE, NUM_FEATURES
+from config import NUM_CLASSES, GLOBAL_MODEL_PATH, BATCH_SIZE, NUM_FEATURES
 from torch.utils.data import DataLoader
 from utils import to_tensor
 import pandas as pd
 import pickle
-import time
+import time, os
 
 STRATEGY = "FedAVG"
 
@@ -56,6 +56,8 @@ def run_inference(model, dataloader, device):
 
 def accumulate_results(results, confusion_matrix_data):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = 'cpu'
+
     client_metrics = {
         'Strategy': [],
         'Component': [],
@@ -76,8 +78,12 @@ def accumulate_results(results, confusion_matrix_data):
      
     for component in components:  
         for fold in folds:
-            print(f"Inference Running: Feature {component} and Fold {fold}")
-            global_model = path.format(component, fold) + '/' + 'global_model.pth'           
+            global_model = path.format(component, fold) + '/' + 'global_model.pth'
+
+            if not os.path.exists(global_model):
+                print(f"{global_model} does not exist. Skipping.")
+                continue  # Skip this iteration and continue with the next file
+           
             model = load_model(model_path=global_model, input_size=component, num_classes=2)
             model.to(device)    
             
@@ -113,13 +119,13 @@ def accumulate_results(results, confusion_matrix_data):
 
 if __name__ == "__main__":
     result_sources = {
-        'components': [12, 14, 16, 18, 20, 22],
+        'components': [12, 10, 8, 6, 4],
         'folds': [1, 2, 3, 4, 5],
         #'folds': [1, 2],
         'marker': ['o', '-', '^' 'x', '-o-'],
-        'clients': [1, 2, 3, 4],
+        'clients': [1, 2, 3, 4, 5, 6],
         'path': './results/original_{0}_fold_{1}'
     }
     confusion_matrix_data = {}
     result_df, store_results_df = accumulate_results(result_sources, confusion_matrix_data)
-    result_df.to_csv("./results/results_v2.csv", index=False)
+    result_df.to_csv("./results/6_clients_FedAVG.csv", index=False)

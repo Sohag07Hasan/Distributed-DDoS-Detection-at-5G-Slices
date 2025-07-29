@@ -7,9 +7,9 @@
     "TEST_DATASET_PATH_ORIGINAL": "../IDS/feature_engineering/dataset_IID/client_{0}/fold_{1}/client_{0}_sclaed_test_dataset.csv"
   },
   "features": {
-    "NUM_FEATURES": 22,
+    "NUM_FEATURES": 12,
     "FEATURE_TYPE": "original",
-    "ALL_FEATURES": "./1.1_final_features_experiment.csv",
+    "ALL_FEATURES": "../IDS/IID_FL_Feature_Rank_6_Clients.csv",
     "LABEL_FEATURE": "Label"
   },
   "training": {
@@ -27,15 +27,15 @@
     "TRAINING_TIME": "./results/{}/training_time.txt"
   },
   "strategy": {
-    "NUM_CLIENTS": 4,
+    "NUM_CLIENTS": 6,
     "NUM_ROUNDS": 5,
     "FRACTION_FIT": 1,
     "FRACTION_EVAL": 1,
-    "MIN_FIT_CLIENTS": 4,
-    "MIN_EVAL_CLIENTS": 4
+    "MIN_FIT_CLIENTS": 6,
+    "MIN_EVAL_CLIENTS": 6
   },
   "server": {
-    "SERVER_ADDRESS": "0.0.0.0:5027"
+    "SERVER_ADDRESS": "0.0.0.0:3087"
   },
   "early_stopping": {
     "EARLY_STOPPING_ROUNDS": 3,

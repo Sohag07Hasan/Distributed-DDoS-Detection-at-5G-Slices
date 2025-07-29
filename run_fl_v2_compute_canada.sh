@@ -11,7 +11,7 @@ module load perl
 
 
 # List of NUM_FEATURES values to iterate over
-NUM_FEATURES_LIST=(25)
+NUM_FEATURES_LIST=(4 6 8 10 12)
 
 # Loop over NUM_FEATURES values
 for NUM_FEATURES in "${NUM_FEATURES_LIST[@]}"; do
@@ -22,7 +22,7 @@ for NUM_FEATURES in "${NUM_FEATURES_LIST[@]}"; do
   jq --argjson num_features "$NUM_FEATURES" '.features.NUM_FEATURES = $num_features' config.json > temp.json && mv temp.json config.json
 
   # Nested loop for folds
-  for FOLD in $(seq 3 5); do
+  for FOLD in $(seq 1 5); do
     echo "Running fold $FOLD with NUM_FEATURES=$NUM_FEATURES..."
 
     # Calculate the port number dynamically (e.g., base port is 8088, increment by 1 for each fold)
@@ -70,6 +70,14 @@ for NUM_FEATURES in "${NUM_FEATURES_LIST[@]}"; do
     echo "Starting client 4 for fold $FOLD..."
     ~/.venvs/fl_env/bin/python c4.py > ./logs/client4_fold_${NUM_FEATURES}_$FOLD.log 2>&1 &
     CLIENT4_PID=$!
+
+    echo "Starting client 5 for fold $FOLD..."
+    ~/.venvs/fl_env/bin/python c5.py > ./logs/client5_fold_${NUM_FEATURES}_$FOLD.log 2>&1 &
+    CLIENT5_PID=$!
+
+    echo "Starting client 6 for fold $FOLD..."
+    ~/.venvs/fl_env/bin/python c6.py > ./logs/client6_fold_${NUM_FEATURES}_$FOLD.log 2>&1 &
+    CLIENT6_PID=$!
 
     # Monitor for server completion by checking for the "done" flag in the file
     echo "Monitoring server completion..."
