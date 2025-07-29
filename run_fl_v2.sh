@@ -1,7 +1,18 @@
 #!/bin/bash
 
+#modules from compute Canada
+module load StdEnv/2023
+#module load ~/.venvs/fl_env/bin/~/.venvs/fl_env/bin/python/3.11.5
+module load r-bundle-bioconductor/3.18
+module load gcc/12.3
+module load cuda
+module load cudnn
+module load arrow
+module load perl
+
+
 # List of NUM_FEATURES values to iterate over
-NUM_FEATURES_LIST=(20 21 24)
+NUM_FEATURES_LIST=(4 6 8 10 12)
 
 # Loop over NUM_FEATURES values
 for NUM_FEATURES in "${NUM_FEATURES_LIST[@]}"; do
@@ -16,7 +27,7 @@ for NUM_FEATURES in "${NUM_FEATURES_LIST[@]}"; do
     echo "Running fold $FOLD with NUM_FEATURES=$NUM_FEATURES..."
 
     # Calculate the port number dynamically (e.g., base port is 8088, increment by 1 for each fold)
-    PORT=$((3090 + FOLD + NUM_FEATURES))
+    PORT=$((5090 + FOLD + NUM_FEATURES))
 
     # Check if any process is using the desired port and kill it if found
     echo "Checking if port $PORT is in use..."
@@ -38,7 +49,7 @@ for NUM_FEATURES in "${NUM_FEATURES_LIST[@]}"; do
     # Start the server and redirect its output to a log file, capture its PID
     echo "Starting the server for fold $FOLD on port $PORT..."
     START=$(date +%s)
-    python server.py > ./logs/server_fold_${NUM_FEATURES}_$FOLD.log 2>&1 &
+    ~/.venvs/fl_env/bin/python server.py > ./logs/server_fold_${NUM_FEATURES}_$FOLD.log 2>&1 &
     SERVER_PID=$!
 
     # Give the server some time to start up
@@ -46,20 +57,30 @@ for NUM_FEATURES in "${NUM_FEATURES_LIST[@]}"; do
 
     # Start clients in the background and capture their PIDs
     echo "Starting client 1 for fold $FOLD..."
-    python c1.py > ./logs/client1_fold_${NUM_FEATURES}_$FOLD.log 2>&1 &
+    ~/.venvs/fl_env/bin/python c1.py > ./logs/client1_fold_${NUM_FEATURES}_$FOLD.log 2>&1 &
     CLIENT1_PID=$!
 
     echo "Starting client 2 for fold $FOLD..."
-    python c2.py > ./logs/client2_fold_${NUM_FEATURES}_$FOLD.log 2>&1 &
+    ~/.venvs/fl_env/bin/python c2.py > ./logs/client2_fold_${NUM_FEATURES}_$FOLD.log 2>&1 &
     CLIENT2_PID=$!
 
     echo "Starting client 3 for fold $FOLD..."
-    python c3.py > ./logs/client3_fold_${NUM_FEATURES}_$FOLD.log 2>&1 &
+    ~/.venvs/fl_env/bin/python c3.py > ./logs/client3_fold_${NUM_FEATURES}_$FOLD.log 2>&1 &
     CLIENT3_PID=$!
 
     echo "Starting client 4 for fold $FOLD..."
-    python c4.py > ./logs/client4_fold_${NUM_FEATURES}_$FOLD.log 2>&1 &
+    ~/.venvs/fl_env/bin/python c4.py > ./logs/client4_fold_${NUM_FEATURES}_$FOLD.log 2>&1 &
     CLIENT4_PID=$!
+
+    echo "Starting client 5 for fold $FOLD..."
+    ~/.venvs/fl_env/bin/python c5.py > ./logs/client5_fold_${NUM_FEATURES}_$FOLD.log 2>&1 &
+    CLIENT5_PID=$!
+
+    echo "Starting client 6 for fold $FOLD..."
+    ~/.venvs/fl_env/bin/python c6.py > ./logs/client6_fold_${NUM_FEATURES}_$FOLD.log 2>&1 &
+    CLIENT6_PID=$!
+
+
 
     # Monitor for server completion by checking for the "done" flag in the file
     echo "Monitoring server completion..."

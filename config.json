@@ -1,21 +1,21 @@
 {
   "dataset_path": {
-    "FOLD": 3,
+    "FOLD": 5,
     "TRAIN_DATASET_PATH_PCA": "../IDS/feature_engineering/dataset_IID/client_{0}/fold_{1}/pca/client_{0}_pca_train_dataset.csv",
     "TEST_DATASET_PATH_PCA": "../IDS/feature_engineering/dataset_IID/client_{0}/fold_{1}/pca/client_{0}_pca_test_dataset.csv",
     "TRAIN_DATASET_PATH_ORIGINAL": "../IDS/feature_engineering/dataset_IID/client_{0}/fold_{1}/client_{0}_scaled_train_dataset.csv",
     "TEST_DATASET_PATH_ORIGINAL": "../IDS/feature_engineering/dataset_IID/client_{0}/fold_{1}/client_{0}_sclaed_test_dataset.csv"
   },
   "features": {
-    "NUM_FEATURES": 20,
+    "NUM_FEATURES": 12,
     "FEATURE_TYPE": "original",
-    "ALL_FEATURES": "./final_features_experiment_1.csv",
+    "ALL_FEATURES": "../IDS/IID_FL_Feature_Rank_6_Clients.csv",
     "LABEL_FEATURE": "Label"
   },
   "training": {
     "LEARNING_RATE": 0.0001,
     "EPOCHS": 30,
-    "BATCH_SIZE": 256,
+    "BATCH_SIZE": 512,
     "MOMENTUM": 0.9,
     "NUM_CLASSES": 2
   },
@@ -27,16 +27,16 @@
     "TRAINING_TIME": "./results/{}/training_time.txt"
   },
   "strategy": {
-    "NUM_CLIENTS": 4,
+    "NUM_CLIENTS": 6,
     "NUM_ROUNDS": 5,
     "FRACTION_FIT": 1,
     "FRACTION_EVAL": 1,
-    "MIN_FIT_CLIENTS": 4,
-    "MIN_EVAL_CLIENTS": 4,
+    "MIN_FIT_CLIENTS": 6,
+    "MIN_EVAL_CLIENTS": 6,
     "PROXIMAL_MU": 0.01
   },
   "server": {
-    "SERVER_ADDRESS": "0.0.0.0:3113"
+    "SERVER_ADDRESS": "0.0.0.0:5107"
   },
   "early_stopping": {
     "EARLY_STOPPING_ROUNDS": 3,
